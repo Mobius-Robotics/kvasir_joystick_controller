@@ -16,17 +16,17 @@ class JoystickReader(Node):
         pygame.joystick.init()
 
         # Publishers for left stick X and Y axes
-        self.publisher_x = self.create_publisher(Float32, 'joystick/left_x', 10)
-        self.publisher_y = self.create_publisher(Float32, 'joystick/left_y', 10)
+        self.publisher_x = self.create_publisher(Float32, "joystick/left_x", 10)
+        self.publisher_y = self.create_publisher(Float32, "joystick/left_y", 10)
 
         # Publisher for fictitious third axis (lb and rb buttons)
-        self.publisher_z = self.create_publisher(Float32, 'joystick/third_axis', 10)
+        self.publisher_z = self.create_publisher(Float32, "joystick/third_axis", 10)
 
-        self.publisher_lt = self.create_publisher(Float32, 'joystick/lt', 10)
-        self.publisher_rt = self.create_publisher(Float32, 'joystick/rt', 10)
+        self.publisher_lt = self.create_publisher(Float32, "joystick/lt", 10)
+        self.publisher_rt = self.create_publisher(Float32, "joystick/rt", 10)
 
         # Timer to check joystick input at 100Hz
-        self.timer = self.create_timer(0.01, self.publish_joystick_data)
+        self.timer = self.create_timer(1 / 60, self.publish_joystick_data)
 
         self.get_logger().info(f"Connected joysticks on start: {pygame.joystick.get_count()}")
 
@@ -79,7 +79,9 @@ class JoystickReader(Node):
 
             self.publisher_z.publish(third_axis)
 
-            self.get_logger().info(f"Published: left_x={left_x.data:.2f}, left_y={left_y.data:.2f}, third_axis={third_axis.data:.2f}")
+            self.get_logger().info(
+                f"Published: left_x={left_x.data:.2f}, left_y={left_y.data:.2f}, third_axis={third_axis.data:.2f}"
+            )
             self.get_logger().info(f"Published: lt={lt.data:.2f}, rt={rt.data:.2f}")
         except pygame.error as e:
             self.get_logger().error(f"Joystick read error: {e}")
@@ -105,5 +107,5 @@ def main(args=None):
         node.cleanup()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
