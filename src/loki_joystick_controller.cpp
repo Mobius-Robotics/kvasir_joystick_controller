@@ -1,3 +1,4 @@
+#include <iterator>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -5,21 +6,15 @@
 
 #include "loki_hw_interface/local_nucleo_interface.hpp"
 #include "rclcpp/rclcpp.hpp"
-
-#include <memory>
-#include <string>
-#include <vector>
-
-#include "loki_hw_interface/local_nucleo_interface.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "std_msgs/msg/float32.hpp"
 
 constexpr double DEADZONE_THRESHOLD = 0.2;
 
 constexpr double apply_deadzone(double x) { return std::abs(x) < DEADZONE_THRESHOLD ? 0.0 : x; };
 
-constexpr double SPEED_GAIN = 100;
-constexpr double THETA_DOT_GAIN = 10;
+constexpr double SPEED_GAINS[] = {10, 100, 1000};
+constexpr double THETA_DOT_GAIN = 5;
 
 constexpr double WHEEL_RADIUS = 65e-3; // m
 constexpr double WHEEL_BASE = 200e-3;  // m
@@ -59,6 +54,14 @@ public:
         "joystick/rt", 10,
         [this](const std_msgs::msg::Float32::SharedPtr msg) { rt_ = apply_deadzone(msg->data); });
 
+    sub_start_ = this->create_subscription<std_msgs::msg::Bool>(
+        "joystick/start", 10,
+        [this](const std_msgs::msg::Bool::SharedPtr msg) { start_ = msg->data; });
+
+    sub_select_ = this->create_subscription<std_msgs::msg::Bool>(
+        "joystick/select", 10,
+        [this](const std_msgs::msg::Bool::SharedPtr msg) { select_ = msg->data; });
+
     // Timer to send wheel speeds at a regular interval
     timer_ = this->create_wall_timer(std::chrono::milliseconds(100),
                                      [this]() { this->update_wheel_speeds(); });
@@ -66,36 +69,63 @@ public:
 
 private:
   void update_wheel_speeds() {
+    // Allow speed selection via start and select.
+    if (start_ && !last_start_) {
+      speed_gain_idx_ += 1;
+      if (speed_gain_idx_ >= std::size(SPEED_GAINS))
+        speed_gain_idx_ = 0;
+    } else if (select_ && !last_select_) {
+      if (speed_gain_idx_ == 0)
+        speed_gain_idx_ = std::size(SPEED_GAINS) - 1;
+      else
+        speed_gain_idx_ -= 1;
+    }
+    auto speed_gain_ = SPEED_GAINS[speed_gain_idx_];
+
+    // Compute (x_dot, y_dot, theta_dot) with appropriate convention conversions (e.g. y reversal)
+    // and gains in the theta case.
     double x_dot = -left_x_;
     double y_dot = left_y_;
     double theta_dot = THETA_DOT_GAIN * (-third_axis_);
 
-    double u1 = SPEED_GAIN * (-WHEEL_BASE * theta_dot + x_dot) / WHEEL_RADIUS;
+    // Compute inverse kinematics via inverse Jacobian, with speed gain.
+    double u1 = speed_gain_ * (-WHEEL_BASE * theta_dot + x_dot) / WHEEL_RADIUS;
     double u2 =
-        SPEED_GAIN * (-WHEEL_BASE * theta_dot - x_dot / 2 - y_dot * SIN_PI_3) / WHEEL_RADIUS;
+        speed_gain_ * (-WHEEL_BASE * theta_dot - x_dot / 2 - y_dot * SIN_PI_3) / WHEEL_RADIUS;
     double u3 =
-        SPEED_GAIN * (-WHEEL_BASE * theta_dot - x_dot / 2 + y_dot * SIN_PI_3) / WHEEL_RADIUS;
+        speed_gain_ * (-WHEEL_BASE * theta_dot - x_dot / 2 + y_dot * SIN_PI_3) / WHEEL_RADIUS;
 
+    // Send wheel speeds.
     comms_->set_wheel_speeds({u1, u2, u3});
 
-    double channel0_angle = map_trigger_to_servo(lt_, 20, 180);
-    comms_->set_servo_angle(0, channel0_angle);
+    // Compute servo angles based on triggers and send them.
+    double theta0 = map_trigger_to_servo(lt_, 20, 180);
+    comms_->set_servo_angle(0, theta0);
+    double theta1 = map_trigger_to_servo(rt_, 120, 160);
+    comms_->set_servo_angle(1, theta1);
 
-    double channel1_angle = map_trigger_to_servo(rt_, 120, 160);
-    comms_->set_servo_angle(1, channel1_angle);
+    // Debug logging, yay!
+    RCLCPP_DEBUG(this->get_logger(), "u=(%.2f, %.2f, %.2f) s=(%.2f°, %.2f) b=(%d %d)", u1, u2, u3,
+                 theta0, theta1, start_, select_);
+
+    // Update button state for "just pressed" check.
+    last_start_ = start_;
+    last_select_ = select_;
   }
 
   std::unique_ptr<LocalNucleoInterface> comms_;
+
   rclcpp::TimerBase::SharedPtr timer_;
 
   rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr sub_left_x_, sub_left_y_, sub_third_axis_,
       sub_lt_, sub_rt_;
 
-  double left_x_ = 0.0;
-  double left_y_ = 0.0;
-  double third_axis_ = 0.0;
-  double lt_ = 0.0;
-  double rt_ = 0.0;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_start_, sub_select_;
+
+  double left_x_{}, left_y_{}, third_axis_{}, lt_{}, rt_{};
+  bool start_{}, select_{}, last_start_{}, last_select_{};
+
+  std::size_t speed_gain_idx_ = 1;
 };
 
 int main(int argc, char **argv) {

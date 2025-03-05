@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Bool
 import pygame
 import time
+
+PUBLISHED_BUTTONS = {
+    "start": 7,
+    "select": 6,
+}
 
 
 class JoystickReader(Node):
@@ -25,6 +30,11 @@ class JoystickReader(Node):
         self.publisher_lt = self.create_publisher(Float32, "joystick/lt", 10)
         self.publisher_rt = self.create_publisher(Float32, "joystick/rt", 10)
 
+        self.button_publishers = {
+            k: self.create_publisher(Bool, f"joystick/{v}", 10)
+            for k, v in PUBLISHED_BUTTONS.items()
+        }
+
         # Timer to check joystick input at 100Hz
         self.timer = self.create_timer(1 / 60, self.publish_joystick_data)
 
@@ -39,7 +49,7 @@ class JoystickReader(Node):
                 if self.joystick is not None:
                     self.joystick.quit()
                 self.joystick = None
-                self.get_logger().info(f"Disconnected from joystick")
+                self.get_logger().warn(f"Disconnected from joystick")
 
         if self.joystick is None:
             if pygame.joystick.get_count() > 0:
@@ -70,6 +80,12 @@ class JoystickReader(Node):
             lb_pressed = self.joystick.get_button(4)  # LB button
             rb_pressed = self.joystick.get_button(5)  # RB button
 
+            for channel, button_num in PUBLISHED_BUTTONS.items():
+                publisher = self.button_publishers[channel]
+                msg = Bool()
+                msg.data = self.joystick.get_button(button_num)
+                publisher.publish(msg)
+
             if lb_pressed and not rb_pressed:
                 third_axis.data = -1.0
             elif not lb_pressed and rb_pressed:
@@ -79,12 +95,13 @@ class JoystickReader(Node):
 
             self.publisher_z.publish(third_axis)
 
-            self.get_logger().info(
+            self.get_logger().debug(
                 f"Published: left_x={left_x.data:.2f}, left_y={left_y.data:.2f}, third_axis={third_axis.data:.2f}"
             )
-            self.get_logger().info(f"Published: lt={lt.data:.2f}, rt={rt.data:.2f}")
+            self.get_logger().debug(f"Published: lt={lt.data:.2f}, rt={rt.data:.2f}")
         except pygame.error as e:
             self.get_logger().error(f"Joystick read error: {e}")
+            self.joystick = None
 
     def cleanup(self):
         self.get_logger().info("Shutting down joystick reader...")
