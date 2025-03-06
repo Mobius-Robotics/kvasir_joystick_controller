@@ -31,7 +31,7 @@ class JoystickReader(Node):
         self.publisher_rt = self.create_publisher(Float32, "joystick/rt", 10)
 
         self.button_publishers = {
-            k: self.create_publisher(Bool, f"joystick/{v}", 10)
+            k: self.create_publisher(Bool, f"joystick/{k}", 10)
             for k, v in PUBLISHED_BUTTONS.items()
         }
 
@@ -83,7 +83,7 @@ class JoystickReader(Node):
             for channel, button_num in PUBLISHED_BUTTONS.items():
                 publisher = self.button_publishers[channel]
                 msg = Bool()
-                msg.data = self.joystick.get_button(button_num)
+                msg.data = bool(self.joystick.get_button(button_num))
                 publisher.publish(msg)
 
             if lb_pressed and not rb_pressed:

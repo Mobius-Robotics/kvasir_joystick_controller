@@ -13,7 +13,7 @@ constexpr double DEADZONE_THRESHOLD = 0.2;
 
 constexpr double apply_deadzone(double x) { return std::abs(x) < DEADZONE_THRESHOLD ? 0.0 : x; };
 
-constexpr double SPEED_GAINS[] = {10, 100, 1000};
+constexpr double SPEED_GAINS[] = {10, 80, 300};
 constexpr double THETA_DOT_GAIN = 5;
 
 constexpr double WHEEL_RADIUS = 65e-3; // m
@@ -71,14 +71,13 @@ private:
   void update_wheel_speeds() {
     // Allow speed selection via start and select.
     if (start_ && !last_start_) {
-      speed_gain_idx_ += 1;
-      if (speed_gain_idx_ >= std::size(SPEED_GAINS))
-        speed_gain_idx_ = 0;
+      if (speed_gain_idx_ != std::size(SPEED_GAINS) - 1)
+        speed_gain_idx_ += 1;
+      comms_->print_lcd(1, "Speed up :)  ");
     } else if (select_ && !last_select_) {
-      if (speed_gain_idx_ == 0)
-        speed_gain_idx_ = std::size(SPEED_GAINS) - 1;
-      else
+      if (speed_gain_idx_ != 0)
         speed_gain_idx_ -= 1;
+      comms_->print_lcd(1, "Speed down :(");
     }
     auto speed_gain_ = SPEED_GAINS[speed_gain_idx_];
 
