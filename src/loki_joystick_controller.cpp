@@ -98,9 +98,9 @@ private:
     comms_->set_wheel_speeds({u1, u2, u3});
 
     // Compute servo angles based on triggers and send them.
-    double theta0 = map_trigger_to_servo(lt_, 20, 180);
+    double theta0 = map_trigger_to_servo(lt_, 70, 90);
     comms_->set_servo_angle(0, theta0);
-    double theta1 = map_trigger_to_servo(rt_, 120, 160);
+    double theta1 = map_trigger_to_servo(rt_, 0, 110);
     comms_->set_servo_angle(1, theta1);
 
     // Debug logging, yay!
