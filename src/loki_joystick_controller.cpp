@@ -94,17 +94,18 @@ private:
     double u3 =
         speed_gain_ * (-WHEEL_BASE * theta_dot - x_dot / 2 + y_dot * SIN_PI_3) / WHEEL_RADIUS;
 
-    // Send wheel speeds.
-    comms_->set_wheel_speeds({u1, u2, u3});
-
     // Compute servo angles based on triggers and send them.
     double theta0 = map_trigger_to_servo(lt_, 70, 90);
-    comms_->set_servo_angle(0, theta0);
     double theta1 = map_trigger_to_servo(rt_, 0, 110);
-    comms_->set_servo_angle(1, theta1);
+
+    // Send servo angles and wheel speeds.
+    // NB: the order in which they are sent seems to be important, perhaps this might be a timing
+    // issue.
+    comms_->set_servo_angles(theta0, theta1);
+    comms_->set_wheel_speeds({u1, u2, u3});
 
     // Debug logging, yay!
-    RCLCPP_DEBUG(this->get_logger(), "u=(%.2f, %.2f, %.2f) s=(%.2f°, %.2f) b=(%d %d)", u1, u2, u3,
+    RCLCPP_DEBUG(this->get_logger(), "u=(%.2f, %.2f, %.2f) s=(%.2f°, %.2f°) b=(%d %d)", u1, u2, u3,
                  theta0, theta1, start_, select_);
 
     // Update button state for "just pressed" check.
