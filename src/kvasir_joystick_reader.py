@@ -3,7 +3,6 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32, Bool
 import pygame
-import time
 
 PUBLISHED_BUTTONS = {
     "start": 7,
@@ -13,7 +12,7 @@ PUBLISHED_BUTTONS = {
 
 class JoystickReader(Node):
     def __init__(self):
-        super().__init__("loki_joystick_reader")
+        super().__init__("kvasir_joystick_reader")
         self.joystick = None
 
         # Initialize pygame for joystick reading
@@ -32,7 +31,7 @@ class JoystickReader(Node):
 
         self.button_publishers = {
             k: self.create_publisher(Bool, f"joystick/{k}", 10)
-            for k, v in PUBLISHED_BUTTONS.items()
+            for k, _ in PUBLISHED_BUTTONS.items()
         }
 
         # Timer to check joystick input at 100Hz

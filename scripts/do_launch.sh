@@ -8,4 +8,4 @@ source /opt/ros/humble/setup.bash
 
 source ~/ros2_ws/install/setup.bash
 
-ros2 launch loki_joystick_controller joystick.launch.py
+ros2 launch kvasir_joystick_controller joystick.launch.py

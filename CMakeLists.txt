@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(loki_joystick_controller)
+project(kvasir_joystick_controller)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -8,7 +8,7 @@ endif()
 ## Dependencies
 set(MY_DEPENDENCIES
   rclcpp
-  loki_hw_interface
+  kvasir_hw_interface
 )
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
@@ -35,9 +35,9 @@ install(
 )
 
 install(
-  PROGRAMS src/loki_joystick_reader.py
+  PROGRAMS src/kvasir_joystick_reader.py
   DESTINATION lib/${PROJECT_NAME}
-  RENAME loki_joystick_reader
+  RENAME kvasir_joystick_reader
 )
 
 ament_package()

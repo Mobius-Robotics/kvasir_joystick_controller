@@ -1,9 +1,9 @@
-loki-joystick-controller
+kvasir-joystick-controller
 ========================
 
-Allows control of Loki via a Joystick, such as an Xbox 360 gamepad, via ROS2 and pygame.
+Allows control of Kvasir via a Joystick, such as an Xbox 360 gamepad, via ROS2 and pygame.
 
-This package depends on `loki_hw_interface`, which can be found in our organization's repositories
+This package depends on `kvasir_hw_interface`, which can be found in our organization's repositories
 and must be present (and have been compiled) in the same ROS2 workspace.
 
 Installation

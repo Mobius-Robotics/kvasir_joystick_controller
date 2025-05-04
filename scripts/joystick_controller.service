@@ -1,5 +1,5 @@
 [Unit]
-Description=Loki joystick Controller
+Description=Kvasir joystick Controller
 After=network.target
 
 [Service]
@@ -8,7 +8,7 @@ User=pi
 # Optionally set the working directory (e.g., your workspace)
 WorkingDirectory=/home/pi
 # Execute the shell script you created
-ExecStart=/home/pi/ros2_ws/src/loki_joystick_controller/scripts/do_launch.sh
+ExecStart=/home/pi/ros2_ws/src/kvasir_joystick_controller/scripts/do_launch.sh
 # Restart the service if it fails
 Restart=always
 RestartSec=5
