@@ -9,8 +9,8 @@
 #include "std_msgs/msg/float32.hpp"
 
 constexpr double WHEEL_RADIUS = 35.9e-3;
-constexpr double WHEEL_L_X = 0.0;
-constexpr double WHEEL_L_Y = 0.0;
+constexpr double WHEEL_L_X = 228.0 / 2;
+constexpr double WHEEL_L_Y = 102.0 / 2;
 
 constexpr double WHEEL_L_SUM = WHEEL_L_X + WHEEL_L_Y;
 constexpr double WHEEL_INVERSE_RADIUS = 1 / WHEEL_RADIUS;
