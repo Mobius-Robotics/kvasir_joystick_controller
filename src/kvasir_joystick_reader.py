@@ -5,8 +5,15 @@ from std_msgs.msg import Float32, Bool
 import pygame
 
 PUBLISHED_BUTTONS = {
-    "start": 7,
+    "a": 0,
+    "b": 1,
+    "x": 2,
+    "y": 3,
     "select": 6,
+    "start": 7,
+    "l3": 8,
+    "r3": 9,
+    "guide": 10,
 }
 
 
@@ -30,11 +37,10 @@ class JoystickReader(Node):
         self.publisher_rt = self.create_publisher(Float32, "joystick/rt", 10)
 
         self.button_publishers = {
-            k: self.create_publisher(Bool, f"joystick/{k}", 10)
-            for k, _ in PUBLISHED_BUTTONS.items()
+            button: self.create_publisher(Bool, f"joystick/{button}", 10)
+            for button in PUBLISHED_BUTTONS
         }
 
-        # Timer to check joystick input at 100Hz
         self.timer = self.create_timer(1 / 60, self.publish_joystick_data)
 
         self.get_logger().info(f"Connected joysticks on start: {pygame.joystick.get_count()}")

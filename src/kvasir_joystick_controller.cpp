@@ -30,6 +30,22 @@ constexpr double map_trigger_to_servo(double x, double new_min,
   return ((x + 1.0) / 2.0) * (new_max - new_min) + new_min;
 }
 
+class Button {
+  public:
+    void update(bool current_state) {
+      prev_state_ = current_state_;
+      current_state_ = current_state;
+    }
+
+    bool just_pressed() const {
+      return current_state_ && !prev_state_;
+    }
+
+  private:
+    bool current_state_ = false;
+    bool prev_state_ = false;
+};
+
 class JoystickControllerNode : public rclcpp::Node {
 public:
   JoystickControllerNode() : Node("joystick_controller_node") {
@@ -65,13 +81,13 @@ public:
 
     sub_start_ = this->create_subscription<std_msgs::msg::Bool>(
         "joystick/start", 10, [this](const std_msgs::msg::Bool::SharedPtr msg) {
-          start_ = msg->data;
+          start_.update(msg->data);
         });
 
     sub_select_ = this->create_subscription<std_msgs::msg::Bool>(
         "joystick/select", 10,
         [this](const std_msgs::msg::Bool::SharedPtr msg) {
-          select_ = msg->data;
+          select_.update(msg->data);
         });
 
     // Timer to send wheel speeds at a regular interval
@@ -82,10 +98,10 @@ public:
 private:
   void update_wheel_speeds() {
     // Allow speed selection via start and select.
-    if (start_ && !last_start_) {
+    if (start_.just_pressed()) {
       if (speed_gain_idx_ != std::size(SPEED_GAINS) - 1)
         speed_gain_idx_ += 1;
-    } else if (select_ && !last_select_) {
+    } else if (select_.just_pressed()) {
       if (speed_gain_idx_ != 0)
         speed_gain_idx_ -= 1;
     }
@@ -109,10 +125,6 @@ private:
 
     // Send wheel speeds.
     comms_->set_wheel_speeds({u1, u2, u3, u4});
-
-    // Update button state for "just pressed" check.
-    last_start_ = start_;
-    last_select_ = select_;
   }
 
   std::unique_ptr<LocalNucleoInterface> comms_;
@@ -125,7 +137,7 @@ private:
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_start_, sub_select_;
 
   double left_x_{}, left_y_{}, third_axis_{}, lt_{}, rt_{};
-  bool start_{}, select_{}, last_start_{}, last_select_{};
+  Button start_{}, select_{};
 
   std::size_t speed_gain_idx_ = 1;
 };
