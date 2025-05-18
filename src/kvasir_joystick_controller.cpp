@@ -100,11 +100,11 @@ private:
     // Compute inverse kinematics via inverse Jacobian, with speed gain.
     int32_t u1 = speed_gain_ * WHEEL_INVERSE_RADIUS *
                  (x_dot - y_dot - WHEEL_L_SUM * theta_dot);
-    int32_t u2 = speed_gain_ * WHEEL_INVERSE_RADIUS *
+    int32_t u2 = -speed_gain_ * WHEEL_INVERSE_RADIUS *
                  (x_dot + y_dot + WHEEL_L_SUM * theta_dot);
     int32_t u3 = speed_gain_ * WHEEL_INVERSE_RADIUS *
                  (x_dot + y_dot - WHEEL_L_SUM * theta_dot);
-    int32_t u4 = speed_gain_ * WHEEL_INVERSE_RADIUS *
+    int32_t u4 = -speed_gain_ * WHEEL_INVERSE_RADIUS *
                  (x_dot - y_dot + WHEEL_L_SUM * theta_dot);
 
     // Send wheel speeds.
