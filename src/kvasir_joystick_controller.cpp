@@ -90,6 +90,9 @@ public:
           select_.update(msg->data);
         });
 
+    // Start every servo at 90°
+    servo_angles_.fill(90.0);
+
     // Timer to send wheel speeds at a regular interval
     timer_ = this->create_wall_timer(std::chrono::milliseconds(100),
                                      [this]() { this->update_wheel_speeds(); });
@@ -123,7 +126,8 @@ private:
     int32_t u4 = -speed_gain_ * WHEEL_INVERSE_RADIUS *
                  (x_dot - y_dot + WHEEL_L_SUM * theta_dot);
 
-    // Send wheel speeds.
+    // Send servo angles and wheel speeds.
+    comms_->set_servo_angles(servo_angles_);
     comms_->set_wheel_speeds({u1, u2, u3, u4});
   }
 
@@ -138,6 +142,8 @@ private:
 
   double left_x_{}, left_y_{}, third_axis_{}, lt_{}, rt_{};
   Button start_{}, select_{};
+
+  std::array<double, 6> servo_angles_{};
 
   std::size_t speed_gain_idx_ = 1;
 };
