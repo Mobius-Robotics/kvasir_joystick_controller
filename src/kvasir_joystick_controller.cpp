@@ -110,25 +110,9 @@ private:
     }
     auto speed_gain_ = SPEED_GAINS[speed_gain_idx_];
 
-    // Compute (x_dot, y_dot, theta_dot) with appropriate convention conversions
-    // (e.g. y reversal) and gains in the theta case.
-    double x_dot = -left_x_;
-    double y_dot = left_y_;
-    double theta_dot = THETA_DOT_GAIN * (-third_axis_);
-
-    // Compute inverse kinematics via inverse Jacobian, with speed gain.
-    int32_t u1 = speed_gain_ * WHEEL_INVERSE_RADIUS *
-                 (x_dot - y_dot - WHEEL_L_SUM * theta_dot);
-    int32_t u2 = -speed_gain_ * WHEEL_INVERSE_RADIUS *
-                 (x_dot + y_dot + WHEEL_L_SUM * theta_dot);
-    int32_t u3 = speed_gain_ * WHEEL_INVERSE_RADIUS *
-                 (x_dot + y_dot - WHEEL_L_SUM * theta_dot);
-    int32_t u4 = -speed_gain_ * WHEEL_INVERSE_RADIUS *
-                 (x_dot - y_dot + WHEEL_L_SUM * theta_dot);
-
     // Send servo angles and wheel speeds.
     comms_->set_servo_angles(servo_angles_);
-    comms_->set_wheel_speeds({u1, u2, u3, u4});
+    comms_->set_body_velocity(-speed_gain_ * left_x_, speed_gain_ * left_y_, THETA_DOT_GAIN * (-third_axis_));
   }
 
   std::unique_ptr<LocalNucleoInterface> comms_;
