@@ -11,6 +11,7 @@
 
   <depend>rclcpp</depend>
   <depend>kvasir_hw_interface</depend>
+  <depend>geometry_msgs</depend>
 
   <exec_depend>python3</exec_depend>
   <exec_depend>rclpy</exec_depend>

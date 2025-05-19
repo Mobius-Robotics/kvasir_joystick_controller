@@ -9,6 +9,7 @@ endif()
 set(MY_DEPENDENCIES
   rclcpp
   kvasir_hw_interface
+  geometry_msgs
 )
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
@@ -16,7 +17,7 @@ foreach(Dependency IN ITEMS ${MY_DEPENDENCIES})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-## Executable
+## Joystick executable
 add_executable(
   ${PROJECT_NAME} src/${PROJECT_NAME}.cpp
 )
@@ -24,8 +25,16 @@ ament_target_dependencies(
   ${PROJECT_NAME} PUBLIC ${MY_DEPENDENCIES}
 )
 
+## Teleop executable
+add_executable(
+  kvasir_teleop_controller src/kvasir_teleop_controller.cpp
+)
+ament_target_dependencies(
+  kvasir_teleop_controller PUBLIC ${MY_DEPENDENCIES}
+)
+
 ## Install
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS ${PROJECT_NAME} kvasir_teleop_controller
   DESTINATION lib/${PROJECT_NAME}
 )
 
