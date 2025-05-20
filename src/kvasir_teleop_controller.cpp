@@ -8,7 +8,9 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "kvasir_hw_interface/local_nucleo_interface.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "std_msgs/msg/float64.hpp"
+#include "std_msgs/msg/u_int8.hpp"
 
 // Scaling factors for velocities.
 constexpr double LINEAR_VELOCITY_SCALE = 1.0;
@@ -30,6 +32,16 @@ public:
     servo_timer_ = this->create_wall_timer(
         std::chrono::milliseconds(SERVO_COMMAND_INTERVAL_MS),
         [this]() { comms_->set_servo_angles(servo_angles_); });
+
+    sub_elevator_steps_ = this->create_subscription<std_msgs::msg::UInt8>(
+        "elevator_steps", 10,
+        [this](const std_msgs::msg::UInt8::SharedPtr msg) {
+          comms_->elevator_step(msg->data, elevator_dir_);
+        });
+    sub_elevator_dir_ = this->create_subscription<std_msgs::msg::Bool>(
+        "elevator_dir", 10, [this](const std_msgs::msg::Bool::SharedPtr msg) {
+          elevator_dir_ = msg->data;
+        });
 
     for (size_t i = 0; i < LocalNucleoInterface::SERVO_COUNT; ++i) {
       auto topic_name = "servo" + std::to_string(i);
@@ -85,6 +97,10 @@ private:
              LocalNucleoInterface::SERVO_COUNT>
       servo_subscribers_;
   rclcpp::TimerBase::SharedPtr servo_timer_;
+
+  rclcpp::Subscription<std_msgs::msg::UInt8>::SharedPtr sub_elevator_steps_;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_elevator_dir_;
+  bool elevator_dir_{};
 
   std::unique_ptr<LocalNucleoInterface> comms_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_cmd_vel_;

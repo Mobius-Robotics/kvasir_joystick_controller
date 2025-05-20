@@ -24,19 +24,17 @@ constexpr double map_trigger_to_servo(double x, double new_min,
 }
 
 class Button {
-  public:
-    void update(bool current_state) {
-      prev_state_ = current_state_;
-      current_state_ = current_state;
-    }
+public:
+  void update(bool current_state) {
+    prev_state_ = current_state_;
+    current_state_ = current_state;
+  }
 
-    bool just_pressed() const {
-      return current_state_ && !prev_state_;
-    }
+  bool just_pressed() const { return current_state_ && !prev_state_; }
 
-  private:
-    bool current_state_ = false;
-    bool prev_state_ = false;
+private:
+  bool current_state_ = false;
+  bool prev_state_ = false;
 };
 
 class JoystickControllerNode : public rclcpp::Node {
@@ -105,7 +103,8 @@ private:
 
     // Send servo angles and wheel speeds.
     comms_->set_servo_angles(servo_angles_);
-    comms_->set_body_velocity(-speed_gain_ * left_x_, speed_gain_ * left_y_, THETA_DOT_GAIN * (-third_axis_));
+    comms_->set_body_velocity(-speed_gain_ * left_x_, speed_gain_ * left_y_,
+                              THETA_DOT_GAIN * (-third_axis_));
   }
 
   std::unique_ptr<LocalNucleoInterface> comms_;
