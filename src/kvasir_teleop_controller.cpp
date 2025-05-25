@@ -16,8 +16,6 @@
 // Scaling factors for velocities.
 constexpr double LINEAR_VELOCITY_SCALE = 1.0;
 constexpr double ANGULAR_VELOCITY_SCALE = 1.0;
-constexpr double DEFAULT_SERVO_ANGLE = 90.0;
-constexpr long SERVO_COMMAND_INTERVAL_MS = 100;
 
 class KvasirTeleopControllerNode : public rclcpp::Node {
 public:
@@ -74,10 +72,24 @@ public:
                 "Ensure teleop_twist_keyboard is running (ros2 run "
                 "teleop_twist_keyboard teleop_twist_keyboard).");
     RCLCPP_INFO(this->get_logger(),
-                "Listening for individual servo angle commands on /servoX.");
+                "Available services: /extend_arm, /retract_arm, "
+                "/extend_pusher, /retract_pusher.");
     RCLCPP_INFO(this->get_logger(),
-                "e.g. 'ros2 topic pub --once /servo0 std_msgs/msg/Float64 "
-                "\"{data: 60.0}\"' to test servos.");
+                "Listening for elevator steps on /elevator_steps and "
+                "direction on /elevator_dir.");
+    RCLCPP_INFO(this->get_logger(),
+                "Use 'ros2 topic pub /elevator_steps std_msgs/UInt8 1' "
+                "to set steps, and 'ros2 topic pub /elevator_dir "
+                "std_msgs/Bool true' to set direction.");
+    RCLCPP_INFO(this->get_logger(),
+                "Use 'ros2 service call /extend_arm std_srvs/srv/Empty' "
+                "to extend the arm, and '/retract_arm' to retract it.");
+    RCLCPP_INFO(this->get_logger(),
+                "Use 'ros2 service call /extend_pusher std_srvs/srv/Empty' "
+                "to extend the pusher, and '/retract_pusher' to retract it.");
+    RCLCPP_INFO(this->get_logger(),
+                "Use 'ros2 service call /extend_pusher std_srvs/srv/Empty' "
+                "to extend the pusher, and '/retract_pusher' to retract it.");
   }
 
 private:
