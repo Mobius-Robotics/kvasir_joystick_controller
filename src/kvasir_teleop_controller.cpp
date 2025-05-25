@@ -11,6 +11,7 @@
 #include "std_msgs/msg/bool.hpp"
 #include "std_msgs/msg/float64.hpp"
 #include "std_msgs/msg/u_int8.hpp"
+#include "std_srvs/srv/empty.hpp"
 
 // Scaling factors for velocities.
 constexpr double LINEAR_VELOCITY_SCALE = 1.0;
@@ -23,45 +24,48 @@ public:
   KvasirTeleopControllerNode() : Node("kvasir_teleop_controller") {
     comms_ = std::make_unique<LocalNucleoInterface>(1000);
 
-    sub_cmd_vel_ = this->create_subscription<geometry_msgs::msg::Twist>(
+    cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
         "cmd_vel", 10, [this](const geometry_msgs::msg::Twist::SharedPtr msg) {
           this->twist_callback(msg);
         });
 
-    servo_angles_.fill(DEFAULT_SERVO_ANGLE);
-    servo_timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(SERVO_COMMAND_INTERVAL_MS),
-        [this]() { comms_->set_servo_angles(servo_angles_); });
-
-    sub_elevator_steps_ = this->create_subscription<std_msgs::msg::UInt8>(
+    elevator_steps_sub_ = this->create_subscription<std_msgs::msg::UInt8>(
         "elevator_steps", 10,
         [this](const std_msgs::msg::UInt8::SharedPtr msg) {
           comms_->elevator_step(msg->data, elevator_dir_);
         });
-    sub_elevator_dir_ = this->create_subscription<std_msgs::msg::Bool>(
+    elevator_dir_sub_ = this->create_subscription<std_msgs::msg::Bool>(
         "elevator_dir", 10, [this](const std_msgs::msg::Bool::SharedPtr msg) {
           elevator_dir_ = msg->data;
         });
 
-    for (size_t i = 0; i < LocalNucleoInterface::SERVO_COUNT; ++i) {
-      auto topic_name = "servo" + std::to_string(i);
-      servo_subscribers_[i] = this->create_subscription<std_msgs::msg::Float64>(
-          topic_name, 10,
-          [this, i](const std_msgs::msg::Float64::SharedPtr msg) {
-            if (msg->data < 0.0 || msg->data > 180.0) {
-              RCLCPP_WARN(this->get_logger(),
-                          "Received invalid servo angle: %f. "
-                          "Angle must be between 0 and 180 degrees.",
-                          msg->data);
-              return;
-            } else {
-              RCLCPP_DEBUG(this->get_logger(),
-                           "Received servo angle for servo %zu: %f", i,
-                           msg->data);
-            }
-            servo_angles_[i] = msg->data;
-          });
-    }
+    extend_arm_service_ = this->create_service<std_srvs::srv::Empty>(
+        "extend_arm",
+        [this](const std::shared_ptr<std_srvs::srv::Empty::Request>,
+               const std::shared_ptr<std_srvs::srv::Empty::Response>) {
+          comms_->extend_arm();
+        });
+    retract_arm_service_ = this->create_service<std_srvs::srv::Empty>(
+        "retract_arm",
+        [this](const std::shared_ptr<std_srvs::srv::Empty::Request>,
+               const std::shared_ptr<std_srvs::srv::Empty::Response>) {
+          comms_->retract_arm();
+        });
+    extend_pusher_service_ = this->create_service<std_srvs::srv::Empty>(
+        "extend_pusher",
+        [this](const std::shared_ptr<std_srvs::srv::Empty::Request>,
+               const std::shared_ptr<std_srvs::srv::Empty::Response>) {
+          for (size_t i = 0; i < LocalNucleoInterface::TIM1_SERVOS; ++i) {
+            pushers_[i] = !pushers_[i]; // Toggle pusher state
+          }
+          comms_->extend_pusher(pushers_);
+        });
+    retract_pusher_service_ = this->create_service<std_srvs::srv::Empty>(
+        "retract_pusher",
+        [this](const std::shared_ptr<std_srvs::srv::Empty::Request>,
+               const std::shared_ptr<std_srvs::srv::Empty::Response>) {
+          comms_->retract_pusher();
+        });
 
     RCLCPP_INFO(this->get_logger(), "Kvasir Teleop Controller started.");
     RCLCPP_INFO(this->get_logger(),
@@ -92,18 +96,17 @@ private:
     comms_->set_body_velocity(x_dot, y_dot, theta_dot);
   }
 
-  std::array<double, LocalNucleoInterface::SERVO_COUNT> servo_angles_{};
-  std::array<rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr,
-             LocalNucleoInterface::SERVO_COUNT>
-      servo_subscribers_;
-  rclcpp::TimerBase::SharedPtr servo_timer_;
-
-  rclcpp::Subscription<std_msgs::msg::UInt8>::SharedPtr sub_elevator_steps_;
-  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_elevator_dir_;
+  rclcpp::Subscription<std_msgs::msg::UInt8>::SharedPtr elevator_steps_sub_;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr elevator_dir_sub_;
   bool elevator_dir_{};
 
   std::unique_ptr<LocalNucleoInterface> comms_;
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_cmd_vel_;
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
+
+
+  bool pushers_[LocalNucleoInterface::TIM1_SERVOS] = {true, false, false, true};
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr extend_arm_service_,
+      retract_arm_service_, extend_pusher_service_, retract_pusher_service_;
 };
 
 int main(int argc, char *argv[]) {

@@ -10,6 +10,7 @@ set(MY_DEPENDENCIES
   rclcpp
   kvasir_hw_interface
   geometry_msgs
+  std_srvs
 )
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
