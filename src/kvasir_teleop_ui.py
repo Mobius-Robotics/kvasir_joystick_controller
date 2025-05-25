@@ -1,5 +1,7 @@
+#!/usr/bin/env python3
 # Copyright 2011 Brown University Robotics.
 # Copyright 2017 Open Source Robotics Foundation, Inc.
+# Copyright 2025 Mobius Robotics
 # All rights reserved.
 #
 # Software License Agreement (BSD License 2.0)
