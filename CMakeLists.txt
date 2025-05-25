@@ -11,6 +11,7 @@ set(MY_DEPENDENCIES
   kvasir_hw_interface
   geometry_msgs
   std_srvs
+  std_msgs
 )
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
@@ -48,6 +49,12 @@ install(
   PROGRAMS src/kvasir_joystick_reader.py
   DESTINATION lib/${PROJECT_NAME}
   RENAME kvasir_joystick_reader
+)
+
+install(
+  PROGRAMS src/kvasir_teleop_ui.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME kvasir_teleop_ui
 )
 
 ament_package()
