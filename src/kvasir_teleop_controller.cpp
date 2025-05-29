@@ -11,6 +11,7 @@
 #include "std_msgs/msg/bool.hpp"
 #include "std_msgs/msg/float64.hpp"
 #include "std_msgs/msg/u_int8.hpp"
+#include "std_msgs/msg/int16.hpp"
 #include "std_srvs/srv/empty.hpp"
 
 // Scaling factors for velocities.
@@ -27,14 +28,10 @@ public:
           this->twist_callback(msg);
         });
 
-    elevator_steps_sub_ = this->create_subscription<std_msgs::msg::UInt8>(
-        "elevator_steps", 10,
-        [this](const std_msgs::msg::UInt8::SharedPtr msg) {
-          comms_->elevator_step(msg->data, elevator_dir_);
-        });
-    elevator_dir_sub_ = this->create_subscription<std_msgs::msg::Bool>(
-        "elevator_dir", 10, [this](const std_msgs::msg::Bool::SharedPtr msg) {
-          elevator_dir_ = msg->data;
+    elevator_pos_sub_ = this->create_subscription<std_msgs::msg::Int16>(
+        "elevator_pos", 10,
+        [this](const std_msgs::msg::Int16::SharedPtr msg) {
+          comms_->move_elevator(msg->data);
         });
 
     extend_arm_service_ = this->create_service<std_srvs::srv::Empty>(
@@ -75,12 +72,8 @@ public:
                 "Available services: /extend_arm, /retract_arm, "
                 "/extend_pusher, /retract_pusher.");
     RCLCPP_INFO(this->get_logger(),
-                "Listening for elevator steps on /elevator_steps and "
-                "direction on /elevator_dir.");
-    RCLCPP_INFO(this->get_logger(),
-                "Use 'ros2 topic pub /elevator_steps std_msgs/UInt8 1' "
-                "to set steps, and 'ros2 topic pub /elevator_dir "
-                "std_msgs/Bool true' to set direction.");
+                "Use 'ros2 topic pub /elevator_pos std_msgs/Int16 1' "
+                "to set elevator position.");
     RCLCPP_INFO(this->get_logger(),
                 "Use 'ros2 service call /extend_arm std_srvs/srv/Empty' "
                 "to extend the arm, and '/retract_arm' to retract it.");
@@ -108,13 +101,10 @@ private:
     comms_->set_body_velocity(x_dot, y_dot, theta_dot);
   }
 
-  rclcpp::Subscription<std_msgs::msg::UInt8>::SharedPtr elevator_steps_sub_;
-  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr elevator_dir_sub_;
-  bool elevator_dir_{};
+  rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr elevator_pos_sub_;
 
   std::unique_ptr<LocalNucleoInterface> comms_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
-
 
   bool pushers_[LocalNucleoInterface::TIM1_SERVOS] = {true, false, false, true};
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr extend_arm_service_,
